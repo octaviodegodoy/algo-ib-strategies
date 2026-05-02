@@ -1,0 +1,171 @@
+2026-05-02 11:37:23 | INFO     | ib_async.client | Connecting to 127.0.0.1:7497 with clientId 1...
+2026-05-02 11:37:25 | INFO     | ib_async.client | Disconnecting
+2026-05-02 11:37:25 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 11:37:25 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 11:52:35 | INFO     | ib_async.client | Connecting to 127.0.0.1:7497 with clientId 1...
+2026-05-02 11:52:37 | INFO     | ib_async.client | Disconnecting
+2026-05-02 11:52:37 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 11:52:37 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 11:52:37 | ERROR    | core.connection | Cannot connect to IB at 127.0.0.1:7497 — TWS/Gateway not running or API not enabled.
+  1. Start TWS or IB Gateway
+  2. Enable API: Edit → Global Configuration → API → Settings
+     → check 'Enable ActiveX and Socket Clients'
+  3. Confirm socket port matches IB_PORT=7497 in your .env
+2026-05-02 11:56:34 | INFO     | ib_async.client | Connecting to 127.0.0.1:7497 with clientId 1...
+2026-05-02 11:56:36 | INFO     | ib_async.client | Disconnecting
+2026-05-02 11:56:36 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 11:56:36 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 11:56:36 | ERROR    | core.connection | Cannot connect to IB at 127.0.0.1:7497 — TWS/Gateway not running or API not enabled.
+  1. Start TWS or IB Gateway
+  2. Enable API: Edit → Global Configuration → API → Settings
+     → check 'Enable ActiveX and Socket Clients'
+  3. Confirm socket port matches IB_PORT=7497 in your .env
+2026-05-02 11:57:02 | INFO     | ib_async.client | Connecting to 127.0.0.1:7497 with clientId 1...
+2026-05-02 11:57:04 | INFO     | ib_async.client | Disconnecting
+2026-05-02 11:57:04 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 11:57:04 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 11:57:04 | ERROR    | core.connection | Cannot connect to IB at 127.0.0.1:7497 — TWS/Gateway not running or API not enabled.
+  1. Start TWS or IB Gateway
+  2. Enable API: Edit → Global Configuration → API → Settings
+     → check 'Enable ActiveX and Socket Clients'
+  3. Confirm socket port matches IB_PORT=7497 in your .env
+2026-05-02 12:02:38 | INFO     | ib_async.client | Connecting to 127.0.0.1:7497 with clientId 1...
+2026-05-02 12:02:40 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:02:40 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 12:02:40 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 12:02:40 | ERROR    | core.connection | Cannot connect to IB at 127.0.0.1:7497 — TWS/Gateway not running or API not enabled.
+  1. Start TWS or IB Gateway
+  2. Enable API: Edit → Global Configuration → API → Settings
+     → check 'Enable ActiveX and Socket Clients'
+  3. Confirm socket port matches IB_PORT=7497 in your .env
+2026-05-02 12:04:23 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:04:23 | INFO     | ib_async.client | Connected
+2026-05-02 12:04:23 | INFO     | ib_async.client | Logged on to server version 178
+2026-05-02 12:04:23 | INFO     | ib_async.client | API connection ready
+2026-05-02 12:04:23 | INFO     | ib_async.wrapper | Warning 2110, reqId -1: Connectivity between Trader Workstation and server is broken. It will be restored automatically.
+2026-05-02 12:04:23 | INFO     | ib_async.wrapper | Warning 2103, reqId -1: Market data farm connection is broken:usfarm
+2026-05-02 12:04:23 | INFO     | ib_async.wrapper | Warning 2107, reqId -1: HMDS data farm connection is inactive but should be available upon demand.ushmds
+2026-05-02 12:04:23 | INFO     | ib_async.wrapper | Warning 2157, reqId -1: Sec-def data farm connection is broken:secdefnj
+2026-05-02 12:04:23 | ERROR    | ib_async.wrapper | Error 10275, reqId -1: Positions info is not available for account(s): U25587921 until the application is finished and approved.
+2026-05-02 12:04:23 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:04:24 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:04:27 | ERROR    | ib_async.ib | positions request timed out
+2026-05-02 12:04:27 | ERROR    | ib_async.ib | open orders request timed out
+2026-05-02 12:04:27 | ERROR    | ib_async.ib | completed orders request timed out
+2026-05-02 12:04:27 | ERROR    | ib_async.ib | account updates for U15343333 request timed out
+2026-05-02 12:04:27 | ERROR    | ib_async.ib | account updates for U25587921 request timed out
+2026-05-02 12:04:31 | ERROR    | ib_async.ib | executions request timed out
+2026-05-02 12:04:31 | INFO     | ib_async.ib | Synchronization complete
+2026-05-02 12:04:31 | INFO     | core.connection | Connected to IB | host=127.0.0.1 port=4001 clientId=1 account=U15343333
+2026-05-02 12:04:50 | INFO     | ib_async.wrapper | Warning 2158, reqId -1: Sec-def data farm connection is OK:secdefnj
+2026-05-02 12:04:50 | INFO     | ib_async.wrapper | Warning 2104, reqId -1: Market data farm connection is OK:usfarm
+2026-05-02 12:05:19 | ERROR    | ib_async.wrapper | Error 1102, reqId -1: Connectivity between IBKR and Trader Workstation has been restored - data maintained. The following farms are connected: usfarm; secdefnj. The following farms are not connected: ushmds.
+2026-05-02 12:05:19 | INFO     | __main__ | Account: U15343333
+2026-05-02 12:05:19 | INFO     | __main__ | Net Liquidation: 0.00
+2026-05-02 12:05:19 | INFO     | __main__ | Available Funds:  0.00
+2026-05-02 12:05:19 | INFO     | __main__ | Done.
+2026-05-02 12:05:19 | INFO     | ib_async.ib | Disconnecting from 127.0.0.1:4001, 1.32 kB sent in 11 messages, 8.19 kB received in 178 messages, session time 56.1 s.
+2026-05-02 12:05:19 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:05:19 | INFO     | core.connection | Disconnected from IB
+2026-05-02 12:05:41 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:05:41 | INFO     | ib_async.client | Connected
+2026-05-02 12:05:41 | INFO     | ib_async.client | Logged on to server version 178
+2026-05-02 12:05:41 | INFO     | ib_async.client | API connection ready
+2026-05-02 12:05:41 | INFO     | ib_async.wrapper | Warning 2104, reqId -1: Market data farm connection is OK:usfarm
+2026-05-02 12:05:41 | INFO     | ib_async.wrapper | Warning 2107, reqId -1: HMDS data farm connection is inactive but should be available upon demand.ushmds
+2026-05-02 12:05:41 | INFO     | ib_async.wrapper | Warning 2158, reqId -1: Sec-def data farm connection is OK:secdefnj
+2026-05-02 12:05:41 | ERROR    | ib_async.wrapper | Error 10275, reqId -1: Positions info is not available for account(s): U25587921 until the application is finished and approved.
+2026-05-02 12:05:41 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:05:41 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:05:45 | ERROR    | ib_async.ib | open orders request timed out
+2026-05-02 12:05:45 | ERROR    | ib_async.ib | completed orders request timed out
+2026-05-02 12:05:45 | INFO     | ib_async.ib | Synchronization complete
+2026-05-02 12:05:45 | INFO     | core.connection | Connected to IB | host=127.0.0.1 port=4001 clientId=1 account=U15343333
+2026-05-02 12:05:46 | INFO     | __main__ | Account: U15343333
+2026-05-02 12:05:46 | INFO     | __main__ | Net Liquidation: 0.00
+2026-05-02 12:05:46 | INFO     | __main__ | Available Funds:  0.00
+2026-05-02 12:05:46 | INFO     | __main__ | Done.
+2026-05-02 12:05:46 | INFO     | ib_async.ib | Disconnecting from 127.0.0.1:4001, 725 B sent in 10 messages, 18.4 kB received in 402 messages, session time 4.18 s.
+2026-05-02 12:05:46 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:05:46 | INFO     | core.connection | Disconnected from IB
+2026-05-02 12:06:07 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:06:07 | INFO     | ib_async.client | Connected
+2026-05-02 12:06:07 | INFO     | ib_async.client | Logged on to server version 178
+2026-05-02 12:06:07 | INFO     | ib_async.wrapper | Warning 2104, reqId -1: Market data farm connection is OK:usfarm
+2026-05-02 12:06:07 | INFO     | ib_async.wrapper | Warning 2107, reqId -1: HMDS data farm connection is inactive but should be available upon demand.ushmds
+2026-05-02 12:06:07 | INFO     | ib_async.client | API connection ready
+2026-05-02 12:06:07 | INFO     | ib_async.wrapper | Warning 2158, reqId -1: Sec-def data farm connection is OK:secdefnj
+2026-05-02 12:06:07 | ERROR    | ib_async.wrapper | Error 10275, reqId -1: Positions info is not available for account(s): U25587921 until the application is finished and approved.
+2026-05-02 12:06:07 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:06:07 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:06:11 | ERROR    | ib_async.ib | open orders request timed out
+2026-05-02 12:06:11 | ERROR    | ib_async.ib | completed orders request timed out
+2026-05-02 12:06:11 | INFO     | ib_async.ib | Synchronization complete
+2026-05-02 12:06:11 | INFO     | core.connection | Connected to IB | host=127.0.0.1 port=4001 clientId=1 account=U15343333
+2026-05-02 12:06:11 | INFO     | __main__ | Account: U15343333
+2026-05-02 12:06:11 | INFO     | __main__ | Net Liquidation: 0.00
+2026-05-02 12:06:11 | INFO     | __main__ | Available Funds:  0.00
+2026-05-02 12:06:11 | INFO     | __main__ | Done.
+2026-05-02 12:06:11 | INFO     | ib_async.ib | Disconnecting from 127.0.0.1:4001, 725 B sent in 10 messages, 18.4 kB received in 402 messages, session time 4.17 s.
+2026-05-02 12:06:11 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:06:11 | INFO     | core.connection | Disconnected from IB
+2026-05-02 12:07:25 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:07:27 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:07:27 | ERROR    | ib_async.client | API connection failed: ConnectionRefusedError(22, 'The remote computer refused the network connection', None, 1225, None)
+2026-05-02 12:07:27 | ERROR    | ib_async.client | Make sure API port on TWS/IBG is open
+2026-05-02 12:07:27 | ERROR    | core.connection | Cannot connect to IB at 127.0.0.1:4001 — TWS/Gateway not running or API not enabled.
+  1. Start TWS or IB Gateway
+  2. Enable API: Edit → Global Configuration → API → Settings
+     → check 'Enable ActiveX and Socket Clients'
+  3. Confirm socket port matches IB_PORT=4001 in your .env
+2026-05-02 12:10:35 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:10:35 | INFO     | ib_async.client | Connected
+2026-05-02 12:10:35 | INFO     | ib_async.client | Logged on to server version 178
+2026-05-02 12:10:35 | INFO     | ib_async.client | API connection ready
+2026-05-02 12:10:35 | INFO     | ib_async.wrapper | Warning 2104, reqId -1: Market data farm connection is OK:usfarm
+2026-05-02 12:10:35 | INFO     | ib_async.wrapper | Warning 2106, reqId -1: HMDS data farm connection is OK:ushmds
+2026-05-02 12:10:35 | INFO     | ib_async.wrapper | Warning 2158, reqId -1: Sec-def data farm connection is OK:secdefnj
+2026-05-02 12:10:35 | ERROR    | ib_async.wrapper | Error 10275, reqId -1: Positions info is not available for account(s): U25587921 until the application is finished and approved.
+2026-05-02 12:10:35 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:10:35 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:10:39 | ERROR    | ib_async.ib | open orders request timed out
+2026-05-02 12:10:39 | ERROR    | ib_async.ib | completed orders request timed out
+2026-05-02 12:10:39 | INFO     | ib_async.ib | Synchronization complete
+2026-05-02 12:10:39 | INFO     | core.connection | Connected to IB | host=127.0.0.1 port=4001 clientId=1 account=U15343333
+2026-05-02 12:10:39 | INFO     | __main__ | Account: U15343333
+2026-05-02 12:10:39 | INFO     | __main__ | Net Liquidation: 0.00
+2026-05-02 12:10:39 | INFO     | __main__ | Available Funds:  0.00
+2026-05-02 12:10:39 | INFO     | __main__ | Done.
+2026-05-02 12:10:39 | INFO     | ib_async.ib | Disconnecting from 127.0.0.1:4001, 725 B sent in 10 messages, 18.3 kB received in 401 messages, session time 4.24 s.
+2026-05-02 12:10:39 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:10:39 | INFO     | core.connection | Disconnected from IB
+2026-05-02 12:13:05 | INFO     | ib_async.client | Connecting to 127.0.0.1:4001 with clientId 1...
+2026-05-02 12:13:05 | INFO     | ib_async.client | Connected
+2026-05-02 12:13:05 | INFO     | ib_async.client | Logged on to server version 178
+2026-05-02 12:13:05 | INFO     | ib_async.client | API connection ready
+2026-05-02 12:13:05 | INFO     | ib_async.wrapper | Warning 2104, reqId -1: Market data farm connection is OK:usfarm
+2026-05-02 12:13:05 | INFO     | ib_async.wrapper | Warning 2106, reqId -1: HMDS data farm connection is OK:ushmds
+2026-05-02 12:13:05 | INFO     | ib_async.wrapper | Warning 2158, reqId -1: Sec-def data farm connection is OK:secdefnj
+2026-05-02 12:13:05 | ERROR    | ib_async.wrapper | Error 10275, reqId -1: Positions info is not available for account(s): U25587921 until the application is finished and approved.
+2026-05-02 12:13:05 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'cp' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:13:05 | INFO     | ib_async.wrapper | Warning 321, reqId -1: Error validating request.-'bZ' : cause - The API interface is currently in Read-Only mode.
+2026-05-02 12:13:09 | ERROR    | ib_async.ib | open orders request timed out
+2026-05-02 12:13:09 | ERROR    | ib_async.ib | completed orders request timed out
+2026-05-02 12:13:09 | INFO     | ib_async.ib | Synchronization complete
+2026-05-02 12:13:09 | INFO     | core.connection | Connected to IB | host=127.0.0.1 port=4001 clientId=1 account=U15343333
+2026-05-02 12:13:09 | INFO     | __main__ | Account: U15343333
+2026-05-02 12:13:09 | INFO     | __main__ | Net Liquidation: 0.00
+2026-05-02 12:13:09 | INFO     | __main__ | Available Funds:  0.00
+2026-05-02 12:13:11 | INFO     | data.market_data | Loaded 30 bars for AAPL (30 D / 1 day)
+2026-05-02 12:13:11 | INFO     | __main__ | AAPL — last 5 daily bars:
+              open    high     low   close      volume
+date                                                  
+2026-04-27  266.09  268.36  265.07  267.61  18990424.0
+2026-04-28  272.34  273.20  268.66  270.71  17551394.0
+2026-04-29  267.59  271.04  267.04  270.17  13324504.0
+2026-04-30  270.52  276.00  268.14  271.35  31354797.0
+2026-05-01  278.86  287.22  278.37  280.14  54314138.0
+2026-05-02 12:13:11 | INFO     | __main__ | Done.
+2026-05-02 12:13:11 | INFO     | ib_async.ib | Disconnecting from 127.0.0.1:4001, 793 B sent in 11 messages, 20.2 kB received in 403 messages, session time 5.74 s.
+2026-05-02 12:13:11 | INFO     | ib_async.client | Disconnecting
+2026-05-02 12:13:11 | INFO     | core.connection | Disconnected from IB
