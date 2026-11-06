@@ -43,8 +43,10 @@ def main() -> None:
         )
 
         if not df.empty:
-            while True:
-               logger.info("AAPL — last 5 daily bars:\n%s", df[["open", "high", "low", "close", "volume"]].tail())
+            logger.info(
+                "AAPL — last 5 daily bars:\n%s",
+                df[["open", "high", "low", "close", "volume"]].tail(),
+            )
         else:
             logger.warning("No data returned for AAPL. Check your market data subscription.")
 
