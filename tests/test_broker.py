@@ -76,14 +76,14 @@ class TestLimitOrders:
 
 class TestStopOrders:
 
-    def test_place_and_cancel_stop_order(self, broker: Broker, ib: IB):
+    def test_place_and_cancel_stop_order(self, broker: Broker, ib: IB, msft):
         """Place a stop order well outside market, then cancel."""
-        ticker = ib.reqMktData(MSFT, "", True, False)
+        ticker = ib.reqMktData(msft, "", True, False)
         ib.sleep(2)
         last = ticker.last or ticker.close or 100.0
         stop_price = round(last * 0.70, 2)   # 30% below market
 
-        trade = broker.place_stop_order(MSFT, "SELL", 1, stop_price)
+        trade = broker.place_stop_order(msft, "SELL", 1, stop_price)
         ib.sleep(1)
 
         assert trade is not None
