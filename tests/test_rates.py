@@ -12,7 +12,7 @@ Run:
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -171,6 +171,103 @@ class TestNoCustomUserAgent:
             "DEFAULT_RATE. See the comment in data/rates.py._fetch_fred."
         )
 
+
+class TestFallbackCacheTtl:
+    """The fallback must not be cached as if it were a rate.
+
+    get_rate() caches whatever it returns so that a scan calling it per option
+    does not hit FRED per option. But DEFAULT_RATE is not a rate, and giving it
+    the same four-hour TTL meant one timeout pinned 5.00% for a whole session
+    while DTB3 was 4.03% -- every IV and delta downstream computed off a number
+    nobody measured. A failed lookup now expires in minutes.
+
+    These age _cached_at directly rather than patching the clock: the TTL
+    comparison is the thing under test, so moving the timestamp exercises it
+    exactly as the passage of time would.
+    """
+
+    @staticmethod
+    def _age(rfr, by):
+        rfr._cached_at -= by
+
+    def test_fallback_still_caches_within_its_own_ttl(self):
+        """A failure must not mean a fetch attempt per call."""
+        rfr = RiskFreeRate(series="DTB3")
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")) as m:
+            assert rfr.get_rate() == RiskFreeRate.DEFAULT_RATE
+            assert rfr.get_rate() == RiskFreeRate.DEFAULT_RATE
+            assert rfr.get_rate() == RiskFreeRate.DEFAULT_RATE
+            assert m.call_count == 1, "retried inside the fallback TTL"
+
+    def test_fallback_is_retried_once_its_short_ttl_expires(self):
+        rfr = RiskFreeRate(series="DTB3")
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")) as m:
+            rfr.get_rate()
+            self._age(rfr, RiskFreeRate._FALLBACK_CACHE_TTL + timedelta(seconds=1))
+            rfr.get_rate()
+            assert m.call_count == 2
+
+    def test_one_outage_does_not_pin_the_wrong_rate_for_the_session(self):
+        """The regression itself: an hour-old fallback must be re-fetched.
+
+        One hour is past _FALLBACK_CACHE_TTL but well inside _CACHE_TTL, so
+        under the old shared TTL this fetch would not happen and 5.00% would
+        survive until the session ended.
+        """
+        rfr = RiskFreeRate(series="DTB3")
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")):
+            assert rfr.get_rate() == RiskFreeRate.DEFAULT_RATE
+        assert rfr.using_fallback
+
+        self._age(rfr, timedelta(hours=1))
+        assert timedelta(hours=1) < RiskFreeRate._CACHE_TTL, (
+            "this test only means something while an hour is inside _CACHE_TTL"
+        )
+
+        with patch.object(rfr, "_fetch_fred", return_value=0.0403):
+            assert rfr.get_rate() == pytest.approx(0.0403)
+        assert not rfr.using_fallback
+
+    def test_a_recovered_rate_then_gets_the_long_ttl(self):
+        """Recovery must not leave it on the short TTL, re-fetching forever."""
+        rfr = RiskFreeRate(series="DTB3")
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")):
+            rfr.get_rate()
+        self._age(rfr, RiskFreeRate._FALLBACK_CACHE_TTL + timedelta(seconds=1))
+        with patch.object(rfr, "_fetch_fred", return_value=0.0403):
+            rfr.get_rate()
+
+        self._age(rfr, RiskFreeRate._FALLBACK_CACHE_TTL + timedelta(seconds=1))
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")) as m:
+            assert rfr.get_rate() == pytest.approx(0.0403)
+            assert m.call_count == 0, "a real rate was dropped on the short TTL"
+
+    def test_a_fetched_rate_is_held_for_the_long_ttl(self):
+        rfr = RiskFreeRate(series="DTB3")
+        with patch.object(rfr, "_fetch_fred", return_value=0.0403) as m:
+            rfr.get_rate()
+            self._age(rfr, RiskFreeRate._FALLBACK_CACHE_TTL + timedelta(seconds=1))
+            assert rfr.get_rate() == pytest.approx(0.0403)
+            assert m.call_count == 1
+
+    def test_the_two_ttls_are_not_the_same(self):
+        """Pins the separation. Setting them equal reinstates the bug."""
+        assert RiskFreeRate._FALLBACK_CACHE_TTL < RiskFreeRate._CACHE_TTL
+        assert RiskFreeRate._FALLBACK_CACHE_TTL <= timedelta(minutes=15)
+        assert RiskFreeRate._FALLBACK_CACHE_TTL >= timedelta(minutes=1), (
+            "too short to be a cache -- a dead FRED would stall every call"
+        )
+
+    def test_using_fallback_starts_false_and_tracks_the_last_call(self):
+        rfr = RiskFreeRate(series="DTB3")
+        assert not rfr.using_fallback
+        with patch.object(rfr, "_fetch_fred", return_value=0.0403):
+            rfr.get_rate()
+        assert not rfr.using_fallback
+        self._age(rfr, RiskFreeRate._CACHE_TTL + timedelta(seconds=1))
+        with patch.object(rfr, "_fetch_fred", side_effect=OSError("boom")):
+            rfr.get_rate()
+        assert rfr.using_fallback
 
 @pytest.mark.live
 class TestFredLive:
