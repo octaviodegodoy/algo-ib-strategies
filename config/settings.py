@@ -5,7 +5,7 @@ load_dotenv()
 
 # --- IB Connection ---
 IB_HOST: str = os.getenv("IB_HOST", "127.0.0.1")
-IB_PORT: int = int(os.getenv("IB_PORT", "7497"))   # 7497=TWS paper, 7496=TWS live, 4001=Gateway live
+IB_PORT: int = int(os.getenv("IB_PORT", "4002"))   # 7497=TWS paper, 7496=TWS live, 4001=Gateway live
 IB_CLIENT_ID: int = int(os.getenv("IB_CLIENT_ID", "1"))
 
 # --- Account ---
