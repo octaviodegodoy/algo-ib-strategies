@@ -133,3 +133,84 @@ class TestDaysToExpiry:
             rfr = RiskFreeRate(series=series)
             rate = rfr.get_rate()
             print(f"  {series:10s}  {desc:50s}  {rate*100:6.3f} %")
+
+
+class TestNoCustomUserAgent:
+    """Offline guard against the regression that broke every rate fetch.
+
+    _fetch_fred used to send "User-Agent: algo-ib-strategies/1.0". FRED accepts
+    the connection for it and then never sends a body, so the read timed out at
+    any value and get_rate() silently returned DEFAULT_RATE (5.00%) while DTB3
+    was 4.03%. Re-adding such a header looks like politeness and disables the
+    whole rate layer, so this pins its absence without needing the network.
+    """
+
+    def test_fetch_sets_no_custom_user_agent(self):
+        captured = {}
+
+        class _Resp:
+            def read(self):
+                return b"DATE,DTB3\n2026-11-04,4.03\n"
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                return False
+
+        def _fake_urlopen(req, timeout=None):
+            captured["req"] = req
+            return _Resp()
+
+        with patch("urllib.request.urlopen", _fake_urlopen):
+            rate = RiskFreeRate(series="DTB3")._fetch_fred("DTB3")
+
+        assert rate == pytest.approx(0.0403)
+        req = captured["req"]
+        assert req.get_header("User-agent") is None, (
+            "a custom User-Agent is set again — FRED black-holes non-default "
+            "agents and every rate lookup will silently fall back to "
+            "DEFAULT_RATE. See the comment in data/rates.py._fetch_fred."
+        )
+
+
+@pytest.mark.live
+class TestFredLive:
+    """Needs network access. These are what would have caught the broken UA.
+
+    Marked `live` so `-m "not live"` still runs offline; the marker covers
+    network-dependent tests as well as ones needing IB.
+    """
+
+    def test_fetch_fred_actually_succeeds(self):
+        """The authoritative guard: _fetch_fred raises on failure.
+
+        Asserting get_rate() != DEFAULT_RATE would false-fail on the day DTB3
+        is genuinely 5.00%. This cannot.
+        """
+        rate = RiskFreeRate(series="DTB3")._fetch_fred("DTB3")
+        assert isinstance(rate, float)
+        assert 0.0 < rate < 0.25, f"implausible rate {rate}"
+
+    def test_get_rate_returns_the_fetched_value_not_the_fallback(self):
+        rfr = RiskFreeRate(series="DTB3")
+        fetched = rfr._fetch_fred("DTB3")
+        assert rfr.get_rate() == pytest.approx(fetched), (
+            "get_rate() did not return what _fetch_fred() returns — it fell "
+            "back to DEFAULT_RATE despite the fetch working"
+        )
+
+    def test_all_series_fetch(self):
+        from data.rates import SERIES_DESCRIPTIONS
+        failed = []
+        for series in SERIES_DESCRIPTIONS:
+            try:
+                r = RiskFreeRate(series=series)._fetch_fred(series)
+                assert 0.0 < r < 0.25
+            except Exception as exc:
+                failed.append(f"{series}: {type(exc).__name__}: {exc}")
+        assert not failed, "series that did not fetch: " + "; ".join(failed)
+
+    def test_rate_is_decimal_not_percent(self):
+        """4.03% must arrive as 0.0403. Forgetting the /100 would make every
+        discount factor and forward price absurd."""
+        rate = RiskFreeRate(series="DTB3")._fetch_fred("DTB3")
+        assert rate < 0.25, f"{rate} looks like percent, not a decimal"
