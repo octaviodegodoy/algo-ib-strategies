@@ -123,8 +123,20 @@ def greeks_from_price(
         return None
 
     delta = b76.fx_delta(F, strike, T, iv, factor, option_type, spot)
-    gamma = b76.fx_gamma(F, strike, spot, T, iv, factor)
     vega, theta = b76.vega_theta(F, strike, T, iv, factor, option_type)
+
+    # black76.fx_gamma is NOT per-share gamma: its formula carries an extra
+    # factor of F in the numerator, so it returns gamma * F. Measured on a
+    # 738 SPY 0DTE ATM: fx_gamma 44.433 against a textbook 0.060, ratio 738.00
+    # exactly. That is the source project's definition and black76 keeps it, as
+    # a faithful port whose numbers must match.
+    #
+    # But OptionRow.gamma means per-share gamma everywhere in THIS project --
+    # gex.py's own bs_gamma returns it, and IBKR's modelGreeks.gamma is it --
+    # and gex.py then computes dollar_gamma = gamma * spot**2 * multiplier.
+    # Passing gamma*F through that inflates every GEX figure by a factor of
+    # spot, about 738x here, which is three orders of magnitude.
+    gamma = b76.fx_gamma(F, strike, spot, T, iv, factor) / F
 
     return LocalGreeks(
         iv=float(iv),

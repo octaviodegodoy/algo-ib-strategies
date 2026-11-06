@@ -214,3 +214,35 @@ def test_call_delta_exceeds_put_delta_magnitude_atm_ordering():
     atm = greeks_from_price(SPOT, 7700.0, "C", "20261113",
                             _price(7700.0, "C"), RATE, today=t)
     assert deep.delta > atm.delta
+
+
+# ── gamma scale ──────────────────────────────────────────────────────────────
+# black76.fx_gamma returns gamma * F, not gamma. greeks_from_price must divide
+# it out, because OptionRow.gamma is per-share everywhere else and gex.py
+# multiplies it by spot**2 -- so letting gamma*F through inflates GEX by ~spot.
+
+def test_gamma_is_per_share_not_scaled_by_the_forward():
+    import math
+    from scipy.stats import norm
+    strike, T, iv = 7700.0, 7.0, 0.13
+    px = _price(strike, "C", T=T, iv=iv)
+    g = greeks_from_price(SPOT, strike, "C", "20261113", px, RATE,
+                          today=date(2026, 11, 4))
+    factor = b76.discount_factor_from_rate(RATE, T)
+    F = SPOT / factor
+    t = T / 252.0
+    d1 = (math.log(F / strike) + 0.5 * iv ** 2 * t) / (iv * math.sqrt(t))
+    textbook = norm.pdf(d1) / (SPOT * iv * math.sqrt(t))
+    assert g.gamma == pytest.approx(textbook, rel=0.02), (
+        "gamma is not per-share — if it carries the forward, GEX inflates by ~spot"
+    )
+    # and it is emphatically not the raw fx_gamma
+    assert g.gamma < b76.fx_gamma(F, strike, SPOT, T, iv, factor) / 100
+
+
+def test_gamma_magnitude_is_plausible_for_an_equity_index():
+    """Per-share gamma on a 7700 index is small; gamma*F would be ~1e3 bigger."""
+    px = _price(7700.0, "C")
+    g = greeks_from_price(SPOT, 7700.0, "C", "20261113", px, RATE,
+                          today=date(2026, 11, 4))
+    assert 0.0 < g.gamma < 0.01
