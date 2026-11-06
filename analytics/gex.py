@@ -237,7 +237,19 @@ class GEXAnalytics:
         expirations       : number of front expirations (default 4)
         strikes_pct_range : ±fraction of spot to include (default 0.10 = ±10%)
         div_yield         : continuous dividend yield for BS fallback
-        use_ib_greeks     : prefer IB's model gamma; fall back to BS when zero
+        use_ib_greeks     : prefer the chain's own gamma column, falling back
+            to _bs_gamma_fallback when it is zero.
+
+            The name is now historical. OptionChain computes gamma locally via
+            analytics/black76.py by default (use_local_greeks=True), so the
+            column this reads is already local Black-76 gamma, not IBKR's.
+            It is only IBKR's if the chain was built with
+            OptionChain(..., use_local_greeks=False).
+
+            Note the fallback uses a DIFFERENT convention from that column:
+            calendar years and an annual rate, per this module's own bs_gamma,
+            rather than trading days and a discount factor. It is a backstop
+            for rows where the local solve failed, not a like-for-like swap.
         """
         rate = self._rfr.get_rate()
         logger.info("Computing GEX for %s  r=%.4f", underlying.symbol, rate)

@@ -7,6 +7,7 @@ from datetime import datetime
 import pandas as pd
 from ib_async import IB, Contract, Option, Ticker
 
+from analytics.local_greeks import greeks_from_price, mid_or_none
 from data.rates import RiskFreeRate
 
 logger = logging.getLogger(__name__)
@@ -82,9 +83,26 @@ class OptionChain:
     # Number of strikes on each side of ATM to request greeks for
     STRIKES_AROUND_ATM = 15
 
-    def __init__(self, ib: IB, rate_series: str = "DTB3") -> None:
+    def __init__(self, ib: IB, rate_series: str = "DTB3",
+                 use_local_greeks: bool = True) -> None:
+        """
+        use_local_greeks : compute delta/gamma/vega/theta/IV here from the
+            quoted mid via analytics.local_greeks, instead of reading IBKR's
+            modelGreeks. True by default.
+
+            Local is self-consistent -- one spot, one tenor convention, IV
+            solved from the price we can actually trade on -- and it works on
+            an account with no live or index market-data subscription, where
+            modelGreeks comes back empty. It also REQUIRES a two-sided market:
+            rows without one are dropped rather than priced off a stale last.
+
+            Set False to go back to IBKR's figures, remembering that its theta
+            is per CALENDAR day and each greek is stamped at whatever
+            underlying level it happened to see.
+        """
         self.ib = ib
         self._rfr = RiskFreeRate(series=rate_series)
+        self.use_local_greeks = use_local_greeks
 
     # ------------------------------------------------------------------
     # Public API
@@ -204,34 +222,37 @@ class OptionChain:
         # ── 7. collect into rows, filter by delta ─────────────────────────
         rows: list[OptionRow] = []
         for ticker in tickers:
-            greeks = ticker.modelGreeks or ticker.lastGreeks
-            if greeks is None or greeks.delta is None:
+            bid = ticker.bid if ticker.bid and ticker.bid > 0 else 0.0
+            ask = ticker.ask if ticker.ask and ticker.ask > 0 else 0.0
+            exp = ticker.contract.lastTradeDateOrContractMonth
+
+            # Greeks first, then filter on OUR delta. Filtering on IBKR's and
+            # then reporting ours would select rows by one model and describe
+            # them with another.
+            g = self._row_greeks(ticker, und_price, rate, bid, ask)
+            if g is None:
                 continue
 
-            abs_delta = abs(greeks.delta)
             matched = any(
-                abs(abs_delta - tgt) <= delta_tolerance
+                abs(abs(g["delta"]) - tgt) <= delta_tolerance
                 for tgt in target_deltas
             )
             if not matched:
                 continue
 
-            bid = ticker.bid if ticker.bid and ticker.bid > 0 else 0.0
-            ask = ticker.ask if ticker.ask and ticker.ask > 0 else 0.0
-            exp = ticker.contract.lastTradeDateOrContractMonth
             dte = RiskFreeRate.days_to_expiry(exp)
-            fwd = RiskFreeRate.forward_price(und_price, rate, dte)
+            fwd = g["forward"] or RiskFreeRate.forward_price(und_price, rate, dte)
             oi = _safe_int(ticker.openInterest)
             rows.append(OptionRow(
                 symbol=ticker.contract.symbol,
                 expiration=exp,
                 strike=ticker.contract.strike,
                 right=ticker.contract.right,
-                delta=round(greeks.delta, 4),
-                gamma=round(greeks.gamma or 0, 6),
-                theta=round(greeks.theta or 0, 4),
-                vega=round(greeks.vega or 0, 4),
-                iv=round(greeks.impliedVol or 0, 4),
+                delta=round(g["delta"], 4),
+                gamma=round(g["gamma"], 6),
+                theta=round(g["theta"], 4),
+                vega=round(g["vega"], 4),
+                iv=round(g["iv"], 4),
                 bid=bid,
                 ask=ask,
                 last=ticker.last or 0.0,
@@ -377,14 +398,14 @@ class OptionChain:
         """Convert a batch of tickers into OptionRow records (full-chain version)."""
         rows: list[OptionRow] = []
         for ticker in tickers:
-            greeks = ticker.modelGreeks or ticker.lastGreeks
-            if greeks is None or greeks.gamma is None:
-                continue
             bid = ticker.bid if ticker.bid and ticker.bid > 0 else 0.0
             ask = ticker.ask if ticker.ask and ticker.ask > 0 else 0.0
             exp = ticker.contract.lastTradeDateOrContractMonth
+            g = self._row_greeks(ticker, und_price, rate, bid, ask)
+            if g is None:
+                continue
             dte = RiskFreeRate.days_to_expiry(exp)
-            fwd = RiskFreeRate.forward_price(und_price, rate, dte)
+            fwd = g["forward"] or RiskFreeRate.forward_price(und_price, rate, dte)
             oi = _safe_int(ticker.openInterest)
             vol = _safe_int(ticker.volume)
             rows.append(OptionRow(
@@ -392,11 +413,11 @@ class OptionChain:
                 expiration=exp,
                 strike=ticker.contract.strike,
                 right=ticker.contract.right,
-                delta=round(greeks.delta or 0, 4),
-                gamma=round(greeks.gamma, 6),
-                theta=round(greeks.theta or 0, 4),
-                vega=round(greeks.vega or 0, 4),
-                iv=round(greeks.impliedVol or 0, 4),
+                delta=round(g["delta"], 4),
+                gamma=round(g["gamma"], 6),
+                theta=round(g["theta"], 4),
+                vega=round(g["vega"], 4),
+                iv=round(g["iv"], 4),
                 bid=bid,
                 ask=ask,
                 last=ticker.last or 0.0,
@@ -414,6 +435,39 @@ class OptionChain:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _row_greeks(self, ticker: Ticker, und_price: float, rate: float,
+                    bid: float, ask: float):
+        """Greeks for one ticker, local or from IBKR. None means skip the row.
+
+        Returns plain floats (never None inside the dict) so the row builders
+        do not each need their own `or 0` dance.
+        """
+        if self.use_local_greeks:
+            mid = mid_or_none(bid, ask)
+            if mid is None:
+                logger.debug("no two-sided market for %s - skipping",
+                             ticker.contract.localSymbol)
+                return None
+            g = greeks_from_price(
+                spot=und_price,
+                strike=ticker.contract.strike,
+                right=ticker.contract.right,
+                expiration=ticker.contract.lastTradeDateOrContractMonth,
+                price=mid,
+                rate=rate,
+            )
+            if g is None:
+                return None
+            return {"delta": g.delta, "gamma": g.gamma, "theta": g.theta,
+                    "vega": g.vega, "iv": g.iv, "forward": g.forward}
+
+        greeks = ticker.modelGreeks or ticker.lastGreeks
+        if greeks is None or greeks.delta is None:
+            return None
+        return {"delta": greeks.delta or 0.0, "gamma": greeks.gamma or 0.0,
+                "theta": greeks.theta or 0.0, "vega": greeks.vega or 0.0,
+                "iv": greeks.impliedVol or 0.0, "forward": 0.0}
 
     def _get_underlying_price(self, contract: Contract) -> float:
         ticker = self.ib.reqMktData(contract, "", snapshot=True, regulatorySnapshot=False)
