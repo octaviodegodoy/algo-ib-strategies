@@ -18,6 +18,25 @@ from ib_async import Stock
 # Allow imports from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# ── console encoding ─────────────────────────────────────────────────────────
+# Several tests print Unicode in their reports (→, ×, box drawing). pytest.ini
+# passes -s, so those writes go straight to the terminal, and a stock Windows
+# console is cp1252: the first arrow raises UnicodeEncodeError and kills the
+# test mid-print — AFTER the data under test arrived intact. In a live run that
+# turned 3 real failures into 18, and the 15 phantoms all pointed at the data
+# layer, which was never broken.
+#
+# errors="replace" matters as much as the encoding: an un-encodable character
+# degrades to a placeholder instead of failing a test. Guarded because these
+# streams are not always TextIOWrapper — pytest's capture objects have no
+# reconfigure — and done before setup_logging() so handlers inherit it.
+for _stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
+del _stream
+
 from core.connection import IBConnection
 from data.market_data import MarketData
 from data.options import OptionChain
