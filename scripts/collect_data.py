@@ -22,7 +22,7 @@ from pathlib import Path
 # Allow imports from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ib_async import Stock, Forex, Future
+from ib_async import Stock, Future
 from core.connection import IBConnection
 from data.market_data import MarketData
 from utils.logger import setup_logging
@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 CONTRACTS = [
     Stock("AAPL", "SMART", "USD"),
     Stock("MSFT", "SMART", "USD"),
-    # Forex("EURUSD"),          # uncomment to add FX
     # Future("ES", "GLOBEX"),   # uncomment to add futures
 ]
 

@@ -10,9 +10,8 @@ Arbitrage and spread sanity checks.
 Strategies validated here:
   1. ETF / Index spread        — SPY vs QQQ correlation check
   2. Dual-listed stock spread  — same stock on two exchanges
-  3. Forex triangular spread   — EUR/USD vs EUR/GBP vs GBP/USD
-  4. Statistical spread        — AAPL vs MSFT price ratio within historical range
-  5. Calendar spread           — historical volatility across timeframes
+  3. Statistical spread        — AAPL vs MSFT price ratio within historical range
+  4. Calendar spread           — historical volatility across timeframes
 
 These tests do NOT place orders.
 They assert that real-time prices are within expected arbitrage bounds,
@@ -35,16 +34,6 @@ def get_close_series(market_data: MarketData, contract, duration="20 D", bar_siz
     if df.empty:
         pytest.skip(f"No data for {contract.symbol}")
     return df["close"].dropna().astype(float)
-
-
-def get_midprice(market_data: MarketData, contract) -> float:
-    snap = market_data.snapshot(contract)
-    bid  = snap.get("bid") or 0.0
-    ask  = snap.get("ask") or 0.0
-    last = snap.get("last") or snap.get("close") or 0.0
-    if bid > 0 and ask > 0:
-        return (bid + ask) / 2.0
-    return float(last)
 
 
 # ── 1. ETF spread — SPY vs QQQ ───────────────────────────────────────────────
@@ -84,46 +73,7 @@ class TestETFSpread:
         )
 
 
-# ── 2. Forex triangular arbitrage — EUR/USD, EUR/GBP, GBP/USD ────────────────
-
-class TestForexTriangularArbitrage:
-
-    def test_eurusd_eurgbp_gbpusd_no_arbitrage(self, market_data: MarketData, eurusd, eurgbp, gbpusd):
-        """
-        Triangular relationship: EUR/USD ≈ EUR/GBP × GBP/USD
-        Deviation > 0.5% indicates a potential arbitrage.
-        """
-        eurusd_mid = get_midprice(market_data, eurusd)
-        eurgbp_mid = get_midprice(market_data, eurgbp)
-        gbpusd_mid = get_midprice(market_data, gbpusd)
-
-        if any(x == 0 for x in (eurusd_mid, eurgbp_mid, gbpusd_mid)):
-            pytest.skip("One or more forex snapshots returned 0 — market may be closed")
-
-        implied_eurusd = eurgbp_mid * gbpusd_mid
-        deviation_pct  = abs(eurusd_mid - implied_eurusd) / eurusd_mid * 100
-
-        assert deviation_pct < 0.5, (
-            f"Triangular arb detected! "
-            f"EUR/USD={eurusd_mid:.5f}, EUR/GBP×GBP/USD={implied_eurusd:.5f}, "
-            f"deviation={deviation_pct:.4f}%"
-        )
-
-    def test_forex_bid_ask_spread_reasonable(self, market_data: MarketData, eurusd, gbpusd):
-        """Forex bid-ask spread must be <10 pips for major pairs."""
-        for contract in (eurusd, gbpusd):
-            snap = market_data.snapshot(contract)
-            bid = float(snap.get("bid") or 0)
-            ask = float(snap.get("ask") or 0)
-            if bid == 0 or ask == 0:
-                continue
-            spread_pips = (ask - bid) * 10_000
-            assert spread_pips < 10, (
-                f"{contract.symbol}: spread {spread_pips:.1f} pips is too wide"
-            )
-
-
-# ── 3. Statistical spread — AAPL vs MSFT ─────────────────────────────────────
+# ── 2. Statistical spread — AAPL vs MSFT ─────────────────────────────────────
 
 class TestStatisticalSpread:
 
@@ -168,7 +118,7 @@ class TestStatisticalSpread:
         )
 
 
-# ── 4. Calendar spread — intraday vs daily volatility ────────────────────────
+# ── 3. Calendar spread — intraday vs daily volatility ────────────────────────
 
 class TestCalendarSpread:
 

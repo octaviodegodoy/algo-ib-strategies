@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 
 import pytest
-from ib_async import Stock, Forex
+from ib_async import Stock
 
 # Allow imports from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -66,25 +66,6 @@ def qqq(ib):
     c = Stock("QQQ", "SMART", "USD")
     ib.qualifyContracts(c)
     return c
-
-@pytest.fixture(scope="module")
-def eurusd(ib):
-    c = Forex("EURUSD")
-    ib.qualifyContracts(c)
-    return c
-
-@pytest.fixture(scope="module")
-def eurgbp(ib):
-    c = Forex("EURGBP")
-    ib.qualifyContracts(c)
-    return c
-
-@pytest.fixture(scope="module")
-def gbpusd(ib):
-    c = Forex("GBPUSD")
-    ib.qualifyContracts(c)
-    return c
-
 
 def qualified_stock(ib, symbol: str, exchange: str = "SMART", currency: str = "USD"):
     """Helper — returns a qualified Stock contract for any symbol."""

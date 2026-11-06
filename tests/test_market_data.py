@@ -126,12 +126,6 @@ class TestHistoricalData:
         df = market_data.get_historical_bars(msft, duration="5 D", bar_size="1 day")
         assert not df.empty
 
-    def test_forex_eurusd_bars(self, market_data: MarketData, eurusd):
-        df = market_data.get_historical_bars(
-            eurusd, duration="5 D", bar_size="1 hour", what_to_show="MIDPOINT"
-        )
-        assert not df.empty, "No EURUSD bars returned"
-
 
 class TestSnapshot:
 

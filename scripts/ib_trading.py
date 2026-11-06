@@ -5,7 +5,7 @@ Self-contained Interactive Brokers trading functions.
 
 Covers:
   - Connection management
-  - Contract helpers (STK, FUT, OPT, FOREX, CFD)
+  - Contract helpers (STK, FUT, OPT, CFD)
   - Order placement (Market, Limit, Stop, Stop-Limit, Bracket, OCA)
   - Order management (cancel, modify, list open orders)
   - Historical bars (OHLCV)
@@ -38,7 +38,6 @@ from ib_async import (
     BracketOrder,
     Contract,
     ContFuture,
-    Forex,
     Future,
     Index,
     LimitOrder,
@@ -188,15 +187,6 @@ def make_option(
         currency=currency,
         multiplier=multiplier,
     )
-
-
-def make_forex(pair: str) -> Forex:
-    """
-    Create a Forex contract.
-
-    pair: e.g. 'EURUSD', 'USDBRL'
-    """
-    return Forex(pair)
 
 
 def make_index(
