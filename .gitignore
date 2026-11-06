@@ -9,3 +9,4 @@ build/
 venv/
 logs/
 *.log
+gex_*.png
