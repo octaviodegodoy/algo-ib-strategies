@@ -102,10 +102,14 @@ class RiskFreeRate:
     def _fetch_fred(self, series: str) -> float:
         """Download the FRED CSV and return the latest non-null value / 100."""
         url = _FRED_CSV_URL.format(series=series)
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "algo-ib-strategies/1.0"},
-        )
+        # DO NOT set a custom User-Agent here. FRED accepts the connection for
+        # "algo-ib-strategies/1.0" and then never sends the body, so the read
+        # times out at whatever value you give it -- 4s and 20s both fail, while
+        # urllib's default UA returns 301 KB in 0.1s every time. That one header
+        # was silently pinning every rate lookup to DEFAULT_RATE (5.00%) when
+        # DTB3 was really 4.03%, and the fallback is cached for 4 hours, so a
+        # single failure fixed the wrong rate in place for a whole session.
+        req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
             content = resp.read().decode("utf-8")
 
