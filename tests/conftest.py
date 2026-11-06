@@ -86,6 +86,33 @@ def qqq(ib):
     ib.qualifyContracts(c)
     return c
 
+@pytest.fixture(scope="module")
+def market_status_spy(ib, spy):
+    """IBKR's own open/closed answer for SPY, as a MarketStatus."""
+    from utils.market_hours import market_status
+    st = market_status(ib, spy)
+    logger = logging.getLogger(__name__)
+    logger.info("market status: %s", st)
+    return st
+
+
+@pytest.fixture(scope="module")
+def require_market_open(market_status_spy):
+    """Skip a test that needs a two-sided market when the market is shut.
+
+    Opt in by requesting this fixture. Tests that only need a connection, a
+    schedule or historical bars should NOT use it — they work fine after hours,
+    and skipping them would hide real breakage.
+
+    Greeks are the reason this exists: analytics/local_greeks computes them from
+    a two-sided mid and returns None without one, so after hours a chain yields
+    no rows and the failure says nothing about the code.
+    """
+    if not market_status_spy:
+        pytest.skip("market closed — %s" % market_status_spy)
+    return market_status_spy
+
+
 def qualified_stock(ib, symbol: str, exchange: str = "SMART", currency: str = "USD"):
     """Helper — returns a qualified Stock contract for any symbol."""
     c = Stock(symbol, exchange, currency)
