@@ -18,10 +18,27 @@ the broker's.
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Iterable, Optional
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+# Same-day (0DTE) expiries get a FRACTION of a trading day, not 0. They are
+# live and tradeable until the bell, with the largest gamma and theta on the
+# board. Returning 0 made greeks_from_price reject them, which silently threw
+# away 47% of a live SPY chain — half the contracts on a day with a 0DTE
+# expiry. Caught only by running with the market open.
+#
+# Fraction is of the regular session, measured in US/Eastern. SPX closes 15:00
+# Central, which is the same instant as 16:00 Eastern, so one clock covers both.
+_MARKET_TZ = ZoneInfo("US/Eastern")
+_SESSION_OPEN = time(9, 30)
+_SESSION_CLOSE = time(16, 0)
+SESSION_HOURS = 6.5
+
+# Half days close at 13:00 and are not modelled: a 0DTE tenor on one of those
+# will read long by up to three hours.
 
 # NYSE full closures. Explicit rather than computed: the observance rules
 # (Saturday -> preceding Friday, Sunday -> following Monday) and Good Friday's
@@ -93,12 +110,47 @@ def count_trading_days(start: date, end: date,
     return n
 
 
-def trading_days_to_expiry(expiration: str, today: Optional[date] = None,
-                           holidays: Optional[Iterable[date]] = None) -> int:
-    """Trading days from today to an IB expiry string (YYYYMMDD), inclusive.
+def session_fraction_remaining(now: Optional[datetime] = None) -> float:
+    """How much of today's regular session is left, as a fraction of one day.
 
-    0 if the expiry is today or in the past — callers must treat 0 as "no
-    tenor" rather than passing it to black76, which divides by sqrt(T).
+    1.0 before the open, 0.0 at or after the close, linear in between. Used for
+    0DTE tenor, so an expiry today is a real fraction of a trading day rather
+    than zero.
+    """
+    ref = (now or datetime.now(_MARKET_TZ)).astimezone(_MARKET_TZ)
+    t = ref.time()
+    if t >= _SESSION_CLOSE:
+        return 0.0
+    if t <= _SESSION_OPEN:
+        return 1.0
+    close = ref.replace(hour=_SESSION_CLOSE.hour, minute=_SESSION_CLOSE.minute,
+                        second=0, microsecond=0)
+    return max(0.0, (close - ref).total_seconds() / 3600.0 / SESSION_HOURS)
+
+
+def trading_days_to_expiry(expiration: str, today: Optional[date] = None,
+                           holidays: Optional[Iterable[date]] = None,
+                           now: Optional[datetime] = None) -> float:
+    """Trading days from now to an IB expiry string (YYYYMMDD), expiry included.
+
+    Returns a FLOAT. An expiry later than today is a whole number of trading
+    days. An expiry TODAY returns the fraction of the session still to run —
+    0.4 at noon, 0.0 once the bell has gone — because a 0DTE option is live
+    until the close and has the biggest greeks on the board. Returning 0 for it
+    dropped half of a live chain.
+
+    0.0 means genuinely no tenor left: expiry in the past, expiry today after
+    the close, or expiry on a non-trading day. Callers must not hand 0.0 to
+    black76, which divides by sqrt(T).
+
+    `now` exists so the 0DTE branch can be tested deterministically.
     """
     exp = datetime.strptime(expiration, "%Y%m%d").date()
-    return count_trading_days(today or date.today(), exp, holidays)
+    ref_date = today or (now.astimezone(_MARKET_TZ).date() if now
+                         else datetime.now(_MARKET_TZ).date())
+
+    if exp == ref_date:
+        if not is_trading_day(exp, holidays):
+            return 0.0
+        return session_fraction_remaining(now)
+    return float(count_trading_days(ref_date, exp, holidays))

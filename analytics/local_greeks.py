@@ -50,7 +50,7 @@ class LocalGreeks:
     theta_calendar: float          # per calendar day, for comparing with IBKR
     forward: float
     factor: float                  # discount factor used
-    trading_days: int
+    trading_days: float            # fractional for a 0DTE expiry
     price_used: float
 
 
@@ -135,7 +135,7 @@ def greeks_from_price(
         theta_calendar=float(theta) * TRADING_TO_CALENDAR,
         forward=float(F),
         factor=float(factor),
-        trading_days=int(T),
+        trading_days=float(T),
         price_used=float(price),
     )
 

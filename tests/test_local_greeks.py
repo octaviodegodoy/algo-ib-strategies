@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -18,7 +19,8 @@ from analytics.local_greeks import (
     TRADING_TO_CALENDAR, greeks_from_price, mid_or_none,
 )
 from utils.tenor import (
-    count_trading_days, is_trading_day, trading_days_to_expiry,
+    count_trading_days, is_trading_day, session_fraction_remaining,
+    trading_days_to_expiry,
 )
 
 RATE = 0.045
@@ -60,9 +62,46 @@ def test_thanksgiving_week_is_four_days():
     assert count_trading_days(date(2026, 11, 20), date(2026, 11, 27)) == 4
 
 
-def test_past_and_present_expiries_are_zero():
-    assert trading_days_to_expiry("20261104", today=date(2026, 11, 4)) == 0
+def test_past_expiry_is_zero():
     assert trading_days_to_expiry("20261101", today=date(2026, 11, 4)) == 0
+
+
+# ── 0DTE: a same-day expiry is a FRACTION of a trading day, never 0 ──────────
+# This used to return 0, and greeks_from_price rejects T<=0, so on any day with
+# a same-day expiry the whole front expiry vanished -- 47% of a live SPY chain
+# (83 of 176 contracts). Only a run with the market open exposed it.
+
+@pytest.mark.parametrize("hhmm,expected", [
+    ((9, 0), 1.0),        # before the open: a full session ahead
+    ((9, 30), 1.0),       # the bell
+    ((12, 45), 0.5),      # half way
+    ((16, 0), 0.0),       # the close
+    ((20, 0), 0.0),       # after hours
+])
+def test_zero_dte_tracks_the_session(hhmm, expected):
+    now = datetime(2026, 11, 6, hhmm[0], hhmm[1], tzinfo=ZoneInfo("US/Eastern"))
+    t = trading_days_to_expiry("20261106", now=now)
+    assert t == pytest.approx(expected, abs=1e-3)
+
+
+def test_zero_dte_is_positive_during_the_session():
+    """The property that actually matters: not 0, so the row is not dropped."""
+    now = datetime(2026, 11, 6, 13, 52, tzinfo=ZoneInfo("US/Eastern"))
+    t = trading_days_to_expiry("20261106", now=now)
+    assert 0.0 < t < 1.0
+
+
+def test_zero_dte_on_a_closed_day_is_zero():
+    """A same-day 'expiry' on a Saturday has no session to run down."""
+    now = datetime(2026, 11, 7, 12, 0, tzinfo=ZoneInfo("US/Eastern"))
+    assert trading_days_to_expiry("20261107", now=now) == 0.0
+
+
+def test_session_fraction_bounds():
+    for h in range(0, 24):
+        f = session_fraction_remaining(
+            datetime(2026, 11, 6, h, 0, tzinfo=ZoneInfo("US/Eastern")))
+        assert 0.0 <= f <= 1.0
 
 
 def test_matches_the_observed_spx_tenor():
