@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 # and snapshot.  Suppress the noise at the ib_async.wrapper level.
 _IB_WRAPPER_LOG = logging.getLogger("ib_async.wrapper")
 
+# How long to wait for streaming quotes before reading them. See _await_quotes:
+# a fixed sleep was reading chains that had barely populated.
+QUOTE_WAIT_CEILING = 12.0   # hard cap, seconds
+QUOTE_WAIT_STEP = 0.5       # poll interval
+QUOTE_WAIT_SETTLE = 1.5     # stop once the count has not grown for this long
+
 
 @contextlib.contextmanager
 def _suppress_error200():
@@ -217,7 +223,7 @@ class OptionChain:
                 self.ib.reqMktData(c, "100,101,104,106", snapshot=False, regulatorySnapshot=False)
                 for c in qualified
             ]
-            self.ib.sleep(3)   # allow greeks to populate
+            self._await_quotes(tickers)
 
         # ── 7. collect into rows, filter by delta ─────────────────────────
         rows: list[OptionRow] = []
@@ -359,7 +365,6 @@ class OptionChain:
         # lines").  Batch the requests, wait for greeks, snapshot the ticker
         # data, then cancel before issuing the next batch.
         BATCH_SIZE = 90
-        BATCH_SLEEP = 4
         rows: list[OptionRow] = []
 
         with _suppress_error200():
@@ -373,7 +378,7 @@ class OptionChain:
                     self.ib.reqMktData(c, "100,101,104,106", snapshot=False, regulatorySnapshot=False)
                     for c in batch
                 ]
-                self.ib.sleep(BATCH_SLEEP)
+                self._await_quotes(tickers)
                 rows.extend(self._collect_chain_rows(tickers, und_price, rate))
                 for c in batch:
                     try:
@@ -435,6 +440,39 @@ class OptionChain:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _await_quotes(self, tickers: list, ceiling: float = QUOTE_WAIT_CEILING,
+                      step: float = QUOTE_WAIT_STEP,
+                      settle: float = QUOTE_WAIT_SETTLE) -> int:
+        """Wait for two-sided quotes to arrive, then stop. Returns how many.
+
+        Replaces a fixed sleep. Measured on a live 176-contract SPY chain: at
+        8 seconds only 8% of tickers had a two-sided market, at 12 seconds all
+        176 did. The old 3s and 4s waits were therefore reading a chain that
+        had barely begun to populate, and since local greeks drop any row
+        without a mid, that silently truncated the chain rather than slowing it.
+
+        Exits as soon as every ticker is two-sided, or once the count has
+        stopped growing for `settle` seconds, so a fully-quoted chain costs a
+        fraction of the ceiling and a thin one is not waited out in full.
+        """
+        best = -1
+        stable = 0.0
+        waited = 0.0
+        while waited < ceiling:
+            self.ib.sleep(step)
+            waited += step
+            n = sum(1 for t in tickers
+                    if t.bid and t.bid > 0 and t.ask and t.ask > 0)
+            if n > best:
+                best, stable = n, 0.0
+            else:
+                stable += step
+            if n == len(tickers) or (best >= 0 and stable >= settle):
+                break
+        logger.debug("quotes: %d/%d two-sided after %.1fs", max(best, 0),
+                     len(tickers), waited)
+        return max(best, 0)
 
     def _row_greeks(self, ticker: Ticker, und_price: float, rate: float,
                     bid: float, ask: float):
